@@ -1,0 +1,20 @@
+{
+  "name": "sir-discord-role-bot",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Discord role bot for SIR Trading — assigns nobility tiers based on combined SIR/HyperSIR/MegaSIR holdings",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:bot": "pnpm --filter @sir/bot dev",
+    "dev:web": "pnpm --filter @sir/verify-web dev",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.10"
+  },
+  "packageManager": "pnpm@9.12.0"
+}
