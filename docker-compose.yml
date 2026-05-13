@@ -13,6 +13,8 @@ services:
     build:
       context: .
       dockerfile: apps/verify-web/Dockerfile
+      args:
+        NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID}
     env_file: .env
     environment:
       DB_PATH: /data/sir.db

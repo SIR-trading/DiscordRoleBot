@@ -20,18 +20,29 @@ export async function POST(req: Request): Promise<Response> {
     const json = await req.json();
     const result = BodySchema.safeParse(json);
     if (!result.success) {
-      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+      console.error("verify:invalid_body", result.error.flatten());
+      return NextResponse.json(
+        { error: "Couldn't process that request. Please try again." },
+        { status: 400 },
+      );
     }
     parsed = result.data;
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
+  } catch (err) {
+    console.error("verify:invalid_json", err);
+    return NextResponse.json(
+      { error: "Couldn't process that request. Please try again." },
+      { status: 400 },
+    );
   }
 
   // 1. Look up nonce → discord ID. Must be unconsumed and unexpired.
   const lookup = lookupNonce(db(), parsed.nonce);
   if (!lookup) {
     return NextResponse.json(
-      { error: "Verification link expired or already used. Run /verify again." },
+      {
+        error:
+          "This link has expired or already been used. Open Discord and run /verify again.",
+      },
       { status: 410 },
     );
   }
@@ -40,17 +51,41 @@ export async function POST(req: Request): Promise<Response> {
   let siwe: SiweMessage;
   try {
     siwe = new SiweMessage(parsed.message);
-  } catch {
-    return NextResponse.json({ error: "Malformed SIWE message." }, { status: 400 });
+  } catch (err) {
+    console.error("verify:siwe_parse_failed", err);
+    return NextResponse.json(
+      {
+        error:
+          "Signature verification failed. Please run /verify again to get a fresh link.",
+      },
+      { status: 400 },
+    );
   }
   if (siwe.domain !== siweDomain()) {
+    console.error("verify:domain_mismatch", {
+      expected: siweDomain(),
+      got: siwe.domain,
+    });
     return NextResponse.json(
-      { error: `Wrong domain in signed message (expected ${siweDomain()}).` },
+      {
+        error:
+          "Signature verification failed. Please run /verify again to get a fresh link.",
+      },
       { status: 400 },
     );
   }
   if (siwe.nonce !== parsed.nonce) {
-    return NextResponse.json({ error: "Nonce mismatch." }, { status: 400 });
+    console.error("verify:nonce_mismatch", {
+      expected: parsed.nonce,
+      got: siwe.nonce,
+    });
+    return NextResponse.json(
+      {
+        error:
+          "Signature verification failed. Please run /verify again to get a fresh link.",
+      },
+      { status: 400 },
+    );
   }
 
   // 3. Cryptographic verification — viem-backed SIWE verify covers signature
@@ -64,14 +99,22 @@ export async function POST(req: Request): Promise<Response> {
       time: new Date().toISOString(),
     });
     if (!result.success) {
+      console.error("verify:siwe_verify_unsuccessful", result);
       return NextResponse.json(
-        { error: "Signature verification failed." },
+        {
+          error:
+            "Signature didn't verify. Try signing again, or run /verify in Discord for a fresh link.",
+        },
         { status: 401 },
       );
     }
   } catch (err) {
+    console.error("verify:siwe_verify_threw", err);
     return NextResponse.json(
-      { error: `Signature verification failed: ${(err as Error).message}` },
+      {
+        error:
+          "Signature didn't verify. Try signing again, or run /verify in Discord for a fresh link.",
+      },
       { status: 401 },
     );
   }

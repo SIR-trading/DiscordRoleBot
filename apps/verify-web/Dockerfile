@@ -11,6 +11,8 @@ RUN pnpm install --frozen-lockfile=false
 COPY packages/shared ./packages/shared
 COPY apps/verify-web ./apps/verify-web
 RUN pnpm --filter @sir/shared build
+ARG NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+ENV NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=$NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
 RUN pnpm --filter @sir/verify-web build
 
 FROM node:20-alpine AS runtime

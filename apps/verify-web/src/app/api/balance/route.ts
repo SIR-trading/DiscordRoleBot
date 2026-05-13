@@ -17,8 +17,9 @@ export async function GET(req: Request): Promise<Response> {
     const payload = await readBalancesForAddress(parsed.data);
     return NextResponse.json(payload);
   } catch (err) {
+    console.error("balance:read_failed", err);
     return NextResponse.json(
-      { error: (err as Error).message || "Read failed." },
+      { error: "Couldn't read your balances right now." },
       { status: 502 },
     );
   }

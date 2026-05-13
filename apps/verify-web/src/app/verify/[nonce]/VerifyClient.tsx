@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useSignMessage } from "wagmi";
 import { SiweMessage } from "siwe";
-import { formatUnits } from "viem";
+import {
+  BaseError as ViemBaseError,
+  UserRejectedRequestError,
+  formatUnits,
+} from "viem";
 import { SIR_DECIMALS } from "@sir/shared";
 import type { BalancesPayload } from "@/lib/balances";
 
@@ -28,6 +32,42 @@ const numberFmt = new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 });
 function formatBalance(raw: string | null): string {
   if (raw === null) return "—";
   return numberFmt.format(Number(formatUnits(BigInt(raw), SIR_DECIMALS)));
+}
+
+type Classified =
+  | { kind: "canceled" }
+  | { kind: "friendly"; message: string }
+  | { kind: "generic" };
+
+const CHAIN_MISMATCH_MSG =
+  "Please switch your wallet to Ethereum mainnet and try again.";
+const DISCONNECTED_MSG = "Wallet disconnected. Reconnect and try again.";
+
+function classifyClientError(err: unknown): Classified {
+  if (err instanceof ViemBaseError) {
+    if (err.walk((e) => e instanceof UserRejectedRequestError)) {
+      return { kind: "canceled" };
+    }
+    const named = err.walk((e) => {
+      const n = (e as { name?: string }).name;
+      return n === "ConnectorChainMismatchError" || n === "ConnectorNotConnectedError";
+    }) as { name?: string } | null;
+    if (named?.name === "ConnectorChainMismatchError")
+      return { kind: "friendly", message: CHAIN_MISMATCH_MSG };
+    if (named?.name === "ConnectorNotConnectedError")
+      return { kind: "friendly", message: DISCONNECTED_MSG };
+  }
+
+  const name = (err as { name?: string } | null)?.name;
+  if (name === "ConnectorChainMismatchError")
+    return { kind: "friendly", message: CHAIN_MISMATCH_MSG };
+  if (name === "ConnectorNotConnectedError")
+    return { kind: "friendly", message: DISCONNECTED_MSG };
+
+  const code = (err as { code?: number } | null)?.code;
+  if (code === 4001 || code === 5000) return { kind: "canceled" };
+
+  return { kind: "generic" };
 }
 
 export default function VerifyClient({ nonce }: { nonce: string }) {
@@ -90,13 +130,21 @@ export default function VerifyClient({ nonce }: { nonce: string }) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         setStatus({
           kind: "error",
-          message: body.error ?? `Verification failed (HTTP ${res.status}).`,
+          message: body.error ?? "Verification failed. Please try again.",
         });
         return;
       }
       setStatus({ kind: "success", address });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unexpected error.";
+      const classified = classifyClientError(err);
+      if (classified.kind === "canceled") {
+        setStatus({ kind: "idle" });
+        return;
+      }
+      const message =
+        classified.kind === "friendly"
+          ? classified.message
+          : "Something went wrong. Please try again.";
       setStatus({ kind: "error", message });
     }
   }

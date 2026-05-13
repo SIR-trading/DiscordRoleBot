@@ -70,6 +70,15 @@ TIER_THRESHOLDS_WEI=100000000000000000000000,250000000000000000000000,...,500000
 
 See `.env.example` for the full list.
 
+### Mobile wallet support (WalletConnect / Reown)
+
+Optional but recommended — without it, desktop browser extensions (MetaMask, etc.) still work but **mobile users cannot connect**.
+
+1. Create a project at https://cloud.reown.com and copy its 32-char project ID.
+2. Add your verify domain (e.g. `https://verify.sir.trading`) to the project's **Allowed Domains**. Otherwise mobile users see a 403 from `api.web3modal.org` and the modal never opens.
+3. Set `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=<id>` in `.env`.
+4. **Rebuild the image**, don't just restart: `docker compose build verify-web && docker compose up -d verify-web`. The value is inlined into the client bundle at build time.
+
 ## Deployment (Hetzner)
 
 ```bash
