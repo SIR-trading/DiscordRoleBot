@@ -5,7 +5,7 @@ Discord bot that assigns nobility tier roles (Gentleman → Sovereign) based on 
 ## How it works
 
 1. User runs `/verify` in Discord.
-2. Bot DMs a one-time link `https://verify.sir.trading/verify/<nonce>`.
+2. Bot replies with a one-time link `https://verify.sir.trading/verify/<nonce>` (ephemeral — only the user sees it).
 3. User connects their wallet on the verify page and signs a SIWE message — no transaction, no gas.
 4. Backend verifies the signature, atomically links wallet → Discord ID.
 5. Bot reads `SirProxy.balanceOf(wallet)` on all three chains, sums the result, and assigns the matching tier role.
@@ -101,7 +101,7 @@ Combined with a weekly Hetzner snapshot, this is plenty for this data volume.
 
 | Command | What it does |
 |---|---|
-| `/verify` | Issues a one-time SIWE link via DM. Rate-limited to 3/hour. |
+| `/verify` | Issues a one-time SIWE link as an ephemeral channel reply. Rate-limited to 3/hour. |
 | `/refresh` | Re-reads your balances now and updates your role. 60s/user cooldown. |
 | `/unlink [wallet]` | Unlink a single wallet, or all of them. Roles are removed within the same tick. |
 | `/balance` | Ephemeral breakdown of your per-chain balance + total + current tier. |

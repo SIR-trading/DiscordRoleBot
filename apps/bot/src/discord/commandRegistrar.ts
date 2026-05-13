@@ -1,7 +1,7 @@
-import { REST, Routes, type ChatInputCommandInteraction, type Client } from "discord.js";
+import { REST, Routes, type Client } from "discord.js";
 import { logger } from "../logger.js";
 import type { CommandContext, SlashCommand } from "./commands/types.js";
-import { verifyCommand } from "./commands/verify.js";
+import { verifyCommand, startVerification, VERIFY_BUTTON_ID } from "./commands/verify.js";
 import { refreshCommand } from "./commands/refresh.js";
 import { unlinkCommand } from "./commands/unlink.js";
 import { balanceCommand } from "./commands/balance.js";
@@ -32,16 +32,28 @@ export async function registerCommands(args: {
 
 export function wireInteractionHandler(client: Client, ctx: CommandContext): void {
   client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
-    const cmd = commandMap.get(interaction.commandName);
-    if (!cmd) return;
     try {
-      await cmd.execute(interaction as ChatInputCommandInteraction, ctx);
+      if (interaction.isChatInputCommand()) {
+        const cmd = commandMap.get(interaction.commandName);
+        if (!cmd) return;
+        await cmd.execute(interaction, ctx);
+        return;
+      }
+      if (interaction.isButton() && interaction.customId === VERIFY_BUTTON_ID) {
+        await startVerification(interaction, ctx);
+        return;
+      }
     } catch (err) {
+      const label = interaction.isChatInputCommand()
+        ? interaction.commandName
+        : interaction.isButton()
+          ? `button:${interaction.customId}`
+          : "unknown";
       logger.error(
-        { command: interaction.commandName, err: (err as Error).message, stack: (err as Error).stack },
-        "command handler threw",
+        { interaction: label, err: (err as Error).message, stack: (err as Error).stack },
+        "interaction handler threw",
       );
+      if (!interaction.isRepliable()) return;
       const errMsg = "Something went wrong. Please try again, and let an admin know if it persists.";
       try {
         if (interaction.deferred || interaction.replied) {

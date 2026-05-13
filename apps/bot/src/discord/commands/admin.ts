@@ -1,8 +1,15 @@
-import { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  MessageFlags,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+} from "discord.js";
 import { UsersRepo } from "../../db/repo/users.js";
 import { WalletsRepo } from "../../db/repo/wallets.js";
 import { stripAllTierRoles } from "../roleSync.js";
 import type { SlashCommand } from "./types.js";
+import { verifyButton } from "./verify.js";
 
 export const adminCommand: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -23,6 +30,11 @@ export const adminCommand: SlashCommand = {
         .addUserOption((opt) =>
           opt.setName("user").setDescription("The Discord user to unlink").setRequired(true),
         ),
+    )
+    .addSubcommand((sc) =>
+      sc
+        .setName("post-verify-button")
+        .setDescription("Post a Verify Wallet button into this channel"),
     ),
   async execute(interaction, ctx) {
     if (!hasAdmin(interaction, ctx.config.discord.adminRoleId)) {
@@ -73,6 +85,29 @@ export const adminCommand: SlashCommand = {
         flags: MessageFlags.Ephemeral,
       });
       ctx.db.prepare(`UPDATE users SET pending_refresh = 1`).run();
+      return;
+    }
+
+    if (sub === "post-verify-button") {
+      const channel = interaction.channel;
+      if (!channel || !channel.isTextBased() || !("send" in channel)) {
+        await interaction.reply({
+          content: "I can't post a message in this channel.",
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(verifyButton);
+      await channel.send({
+        content:
+          "**Link your wallet to claim your SIR nobility tier**\n\n" +
+          "Click below to start verification. You'll get a private one-time link — no gas, no transaction, just a signature.",
+        components: [row],
+      });
+      await interaction.reply({
+        content: "Posted.",
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
