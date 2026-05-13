@@ -13,7 +13,7 @@ COPY apps/bot ./apps/bot
 RUN pnpm --filter @sir/bot build
 
 # Prune to production deps for the runtime stage
-RUN pnpm --filter @sir/bot deploy --legacy --prod /out/bot
+RUN pnpm --filter @sir/bot deploy --prod /out/bot
 
 FROM node:20-alpine AS runtime
 RUN apk add --no-cache tini sqlite
