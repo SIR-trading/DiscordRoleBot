@@ -10,6 +10,7 @@ RUN pnpm install --frozen-lockfile=false
 
 COPY packages/shared ./packages/shared
 COPY apps/bot ./apps/bot
+RUN pnpm --filter @sir/shared build
 RUN pnpm --filter @sir/bot build
 
 # Prune to production deps for the runtime stage

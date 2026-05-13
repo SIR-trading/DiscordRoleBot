@@ -3,16 +3,32 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./chains": "./src/chains.ts",
-    "./tiers": "./src/tiers.ts",
-    "./abi/sirProxy": "./src/abi/sirProxy.ts",
-    "./types": "./src/types.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./chains": {
+      "types": "./dist/chains.d.ts",
+      "default": "./dist/chains.js"
+    },
+    "./tiers": {
+      "types": "./dist/tiers.d.ts",
+      "default": "./dist/tiers.js"
+    },
+    "./abi/sirProxy": {
+      "types": "./dist/abi/sirProxy.d.ts",
+      "default": "./dist/abi/sirProxy.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -10,6 +10,7 @@ RUN pnpm install --frozen-lockfile=false
 
 COPY packages/shared ./packages/shared
 COPY apps/verify-web ./apps/verify-web
+RUN pnpm --filter @sir/shared build
 RUN pnpm --filter @sir/verify-web build
 
 FROM node:20-alpine AS runtime
