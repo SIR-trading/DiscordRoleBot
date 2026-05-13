@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { serverEnv } from "@/lib/env";
 import { lookupNonce } from "@/lib/linking";
 import VerifyClient from "./VerifyClient";
 
@@ -36,7 +37,7 @@ export default async function VerifyPage({ params }: Props) {
         </p>
         <p className="muted">
           Expires <span suppressHydrationWarning>{new Date(lookup.expiresAt * 1000).toLocaleTimeString()}</span>.
-          One wallet per Discord account; one Discord account per wallet.
+          Up to {serverEnv().MAX_WALLETS_PER_USER} wallets per Discord account; each wallet links to only one Discord account.
         </p>
         <VerifyClient nonce={nonce} />
       </div>
