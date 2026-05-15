@@ -136,6 +136,7 @@ export default function VerifyClient({ nonce }: { nonce: string }) {
       }
       setStatus({ kind: "success", address });
     } catch (err) {
+      console.error("verify:onSign_threw", err);
       const classified = classifyClientError(err);
       if (classified.kind === "canceled") {
         setStatus({ kind: "idle" });
