@@ -13,7 +13,7 @@ export class NoncesRepo {
   constructor(private readonly db: Database.Database) {}
 
   issue(args: { discordId: string; ttlSeconds: number }): { nonce: string; expiresAt: number } {
-    const nonce = randomBytes(32).toString("base64url");
+    const nonce = randomBytes(32).toString("hex");
     const row = this.db
       .prepare(
         `INSERT INTO verification_nonces (nonce, discord_id, issued_at, expires_at)
